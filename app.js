@@ -537,7 +537,6 @@ function Hero({
       textAlign: "center"
     }
   }, /*#__PURE__*/React.createElement("h1", {
-    className: "fadeUp",
     style: {
       fontSize: 54,
       fontWeight: 500,
@@ -545,19 +544,26 @@ function Hero({
       lineHeight: 1.22,
       margin: "0 0 18px"
     }
-  }, "간편하게 CASE STUDY 생성하세요"), /*#__PURE__*/React.createElement("p", {
+  }, "간편하게 CASE STUDY 생성하세요".split(" ").map((w, i, arr) => /*#__PURE__*/React.createElement("span", {
+    key: i,
+    className: "diaWord",
+    style: {
+      animationDelay: `${1.05 + i * 0.13}s`,
+      marginRight: i < arr.length - 1 ? "0.26em" : 0
+    }
+  }, w))), /*#__PURE__*/React.createElement("p", {
     className: "fadeUp",
     style: {
       fontSize: 15,
       fontWeight: 300,
       color: "#666",
       margin: "0 0 36px",
-      animationDelay: ".08s"
+      animationDelay: "1.65s"
     }
   }, "프로덕트 디자인 포트폴리오 작업에 추가해 보세요."), /*#__PURE__*/React.createElement("div", {
     className: "fadeUp",
     style: {
-      animationDelay: ".16s"
+      animationDelay: "1.78s"
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: onDemo,
@@ -576,7 +582,7 @@ function Hero({
       height: 460,
       borderRadius: 8,
       overflow: "hidden",
-      animationDelay: ".28s"
+      animationDelay: "1.88s"
     }
   }, /*#__PURE__*/React.createElement("img", {
     src: HERO_LEFT,
@@ -599,7 +605,7 @@ function Hero({
       objectFit: "cover",
       borderRadius: 8,
       display: "block",
-      animationDelay: ".36s"
+      animationDelay: "1.98s"
     }
   }))));
 }
@@ -1182,16 +1188,27 @@ function Wizard({
     }
   }), /*#__PURE__*/React.createElement("span", {
     style: {
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 6,
       fontSize: 12,
       fontWeight: i === mi ? 500 : 300,
       color: i === mi ? "#1a1a1a" : "#999"
     }
-  }, mm.nav, filled[i] && /*#__PURE__*/React.createElement("span", {
-    style: {
-      marginLeft: 4,
-      fontSize: 10
-    }
-  }, "●"))))), /*#__PURE__*/React.createElement("button", {
+  }, filled[i] && /*#__PURE__*/React.createElement("svg", {
+    width: "11",
+    height: "11",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: i === mi ? "#1a1a1a" : "#999",
+    strokeWidth: "2.8",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M20 6L9 17l-5-5",
+    className: "checkDraw"
+  })), mm.nav)))), /*#__PURE__*/React.createElement("button", {
     onClick: next,
     disabled: last && !canGen,
     className: last && !canGen ? "bpBlackOff" : "bpBlack",
@@ -1967,6 +1984,8 @@ body { margin: 0; background: #fff; }
 @keyframes kWipeOut { from { transform: scaleY(1); } to { transform: scaleY(0); } }
 @keyframes kHeroOut { to { opacity: 0; transform: translateY(10px); } }
 .heroCardOut { animation: kHeroOut .6s cubic-bezier(.25,0,.1,1) both; }
+@keyframes kDia { from { opacity: 0; filter: blur(12px); transform: translateY(14px); } to { opacity: 1; filter: blur(0); transform: translateY(0); } }
+.diaWord { display: inline-block; background: linear-gradient(180deg, #141414 30%, #7e7e7e 115%); -webkit-background-clip: text; background-clip: text; color: transparent; animation: kDia .85s cubic-bezier(.25,0,.1,1) both; will-change: filter, transform, opacity; }
 
 .wipeCol { flex: 1; background: #141416; transform: scaleY(0); will-change: transform; }
 .wipeCover .wipeCol { transform-origin: top; animation: kWipeIn .5s cubic-bezier(.7,0,.2,1) both; }
