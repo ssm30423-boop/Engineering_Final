@@ -569,19 +569,27 @@ function Hero({
       gap: 24,
       marginTop: 70
     }
-  }, /*#__PURE__*/React.createElement("img", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "fadeUp",
+    style: {
+      position: "relative",
+      height: 460,
+      borderRadius: 8,
+      overflow: "hidden",
+      animationDelay: ".28s"
+    }
+  }, /*#__PURE__*/React.createElement("img", {
     src: HERO_LEFT,
     alt: "",
     style: {
+      position: "absolute",
+      inset: 0,
       width: "100%",
-      height: 460,
+      height: "100%",
       objectFit: "cover",
-      borderRadius: 8,
-      display: "block",
-      animationDelay: ".28s"
+      display: "block"
     }
-  }), /*#__PURE__*/React.createElement("img", {
+  }), /*#__PURE__*/React.createElement(HeroPipelineCard, null)), /*#__PURE__*/React.createElement("img", {
     className: "fadeUp",
     src: HERO_RIGHT,
     alt: "",
@@ -594,6 +602,186 @@ function Hero({
       animationDelay: ".36s"
     }
   }))));
+}
+
+// ── 히어로 좌측 모션 카드 — 생성 파이프라인이 루프로 동작하는 시연 컴포넌트 ──
+function HeroPipelineCard() {
+  const [tick, setTick] = useState(0);
+  const [view, setView] = useState({
+    title: "재료를 읽고 있어요...",
+    mats: ["run", "idle", "idle", "idle"],
+    previews: ["", "", "", ""],
+    seg: false,
+    out: false
+  });
+  useEffect(() => {
+    const P = ["주문 추적 사용률 — → 68", "페인포인트 2건 · 인용 2건", "의사결정 1건", "화면 5장"];
+    const ids = [];
+    const at = (ms, fn) => ids.push(setTimeout(fn, ms));
+    setView({
+      title: "재료를 읽고 있어요...",
+      mats: ["run", "idle", "idle", "idle"],
+      previews: ["", "", "", ""],
+      seg: false,
+      out: false
+    });
+    at(950, () => setView(v => ({
+      ...v,
+      mats: ["done", "run", "idle", "idle"],
+      previews: [P[0], "", "", ""]
+    })));
+    at(1900, () => setView(v => ({
+      ...v,
+      mats: ["done", "done", "run", "idle"],
+      previews: [P[0], P[1], "", ""]
+    })));
+    at(2800, () => setView(v => ({
+      ...v,
+      mats: ["done", "done", "done", "run"],
+      previews: [P[0], P[1], P[2], ""]
+    })));
+    at(3900, () => setView(v => ({
+      ...v,
+      mats: ["done", "done", "done", "done"],
+      previews: P
+    })));
+    at(4400, () => setView(v => ({
+      ...v,
+      title: "서사로 엮고 있어요...",
+      seg: true
+    })));
+    at(6500, () => setView(v => ({
+      ...v,
+      title: "케이스가 완성됐어요"
+    })));
+    at(7900, () => setView(v => ({
+      ...v,
+      out: true
+    })));
+    at(8700, () => setTick(t => t + 1));
+    return () => ids.forEach(clearTimeout);
+  }, [tick]);
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      inset: 0,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    key: tick,
+    className: view.out ? "heroCardOut" : "cardIn",
+    style: {
+      width: 300,
+      background: "#fff",
+      padding: "24px 24px 22px",
+      boxShadow: "0 24px 60px rgba(0,0,0,.35)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    key: view.title,
+    className: "fadeUp",
+    style: {
+      fontSize: 15,
+      fontWeight: 500,
+      letterSpacing: "-0.01em",
+      marginBottom: 16
+    }
+  }, view.title), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 10
+    }
+  }, MATERIALS.map((m, i) => {
+    const st = view.mats[i];
+    return /*#__PURE__*/React.createElement("div", {
+      key: m.key,
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 9
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        width: 14,
+        height: 14,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0
+      }
+    }, st === "done" ? /*#__PURE__*/React.createElement("svg", {
+      width: "12",
+      height: "12",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "#1a1a1a",
+      strokeWidth: "2.6",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }, /*#__PURE__*/React.createElement("path", {
+      d: "M20 6L9 17l-5-5",
+      className: "checkDraw"
+    })) : st === "run" ? /*#__PURE__*/React.createElement(Spinner, null) : /*#__PURE__*/React.createElement("span", {
+      style: {
+        width: 4,
+        height: 4,
+        borderRadius: 2,
+        background: "#ccc"
+      }
+    })), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 12,
+        fontWeight: st === "run" ? 500 : 300,
+        color: st === "idle" ? "#999" : "#1a1a1a",
+        whiteSpace: "nowrap"
+      }
+    }, m.nav, " 데이터"), view.previews[i] && /*#__PURE__*/React.createElement("span", {
+      className: "fadeUp",
+      style: {
+        fontSize: 11,
+        fontWeight: 300,
+        color: "#999",
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis"
+      }
+    }, view.previews[i]));
+  }), view.seg && /*#__PURE__*/React.createElement("div", {
+    className: "fadeUp",
+    style: {
+      display: "flex",
+      gap: 4,
+      marginTop: 6,
+      borderTop: "1px solid #eee",
+      paddingTop: 13
+    }
+  }, ["기준선", "문제", "결정", "변화", "성과"].map((s, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 2,
+      background: "#eee",
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "fillSeg",
+    style: {
+      animationDelay: `${i * 0.3}s`
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 9,
+      fontWeight: 300,
+      color: "#999",
+      marginTop: 5,
+      textAlign: "center"
+    }
+  }, s)))))));
 }
 
 // ── 공통 헤더 (좌: 로고 · 우: 닫기) ──
@@ -1777,6 +1965,8 @@ body { margin: 0; background: #fff; }
 @keyframes kBeam { 0% { transform: translateY(-110px); } 100% { transform: translateY(var(--beamH)); } }
 @keyframes kWipeIn { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 @keyframes kWipeOut { from { transform: scaleY(1); } to { transform: scaleY(0); } }
+@keyframes kHeroOut { to { opacity: 0; transform: translateY(10px); } }
+.heroCardOut { animation: kHeroOut .6s cubic-bezier(.25,0,.1,1) both; }
 
 .wipeCol { flex: 1; background: #141416; transform: scaleY(0); will-change: transform; }
 .wipeCover .wipeCol { transform-origin: top; animation: kWipeIn .5s cubic-bezier(.7,0,.2,1) both; }
