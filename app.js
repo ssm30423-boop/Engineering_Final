@@ -250,6 +250,9 @@ const MATERIALS = [{
 // ════════════════════════ 앱 ════════════════════════
 function CaseOne() {
   const [home, setHome] = useState(true);
+  const [dash, setDash] = useState(false);
+  const [viewIdx, setViewIdx] = useState(null);
+  const [savedCases, setSavedCases] = useState([]);
   const [step, setStep] = useState(0); // 0 재료 위저드 · 1 생성 · 2 케이스
   const [quant, setQuant] = useState({
     name: "",
@@ -425,6 +428,23 @@ JSON만 출력(백틱 금지):
       setTimeout(() => runPipeline(), 700);
     });
   }
+  function saveCase() {
+    const snap = {
+      id: Date.now(),
+      proj,
+      baseline,
+      sections,
+      images,
+      m1,
+      isDemo
+    };
+    setSavedCases(prev => [...prev, snap]);
+    transitionTo(() => {
+      setDash(true);
+      setViewIdx(null);
+      showToast("대시보드에 저장했어요");
+    });
+  }
   function resetAll() {
     setQuant({
       name: "",
@@ -451,7 +471,49 @@ JSON만 출력(백틱 금지):
       fontFamily: "'Google Sans Flex', 'Google Sans', 'Pretendard Variable', Pretendard, -apple-system, system-ui, sans-serif"
     }
   }, /*#__PURE__*/React.createElement(Style, null), home ? /*#__PURE__*/React.createElement(Hero, {
-    onDemo: () => transitionTo(() => setHome(false))
+    onDemo: () => transitionTo(() => {
+      setHome(false);
+      setDash(false);
+      setViewIdx(null);
+      setStep(0);
+    })
+  }) : dash ? viewIdx !== null && savedCases[viewIdx] ? /*#__PURE__*/React.createElement(CasePage, {
+    proj: savedCases[viewIdx].proj,
+    baseline: savedCases[viewIdx].baseline,
+    sections: savedCases[viewIdx].sections,
+    setSections: u => setSavedCases(prev => prev.map((c, i) => i === viewIdx ? {
+      ...c,
+      sections: typeof u === "function" ? u(c.sections) : u
+    } : c)),
+    images: savedCases[viewIdx].images,
+    m1: savedCases[viewIdx].m1,
+    isDemo: savedCases[viewIdx].isDemo,
+    showToast: showToast,
+    celebrate: false,
+    fromDash: true,
+    onBackDash: () => transitionTo(() => setViewIdx(null)),
+    onHome: () => transitionTo(() => {
+      setDash(false);
+      setViewIdx(null);
+      setHome(true);
+    })
+  }) : /*#__PURE__*/React.createElement(Dashboard, {
+    cases: savedCases,
+    onView: i => transitionTo(() => setViewIdx(i)),
+    onDelete: id => {
+      setSavedCases(prev => prev.filter(c => c.id !== id));
+      showToast("삭제했어요");
+    },
+    onCreate: () => transitionTo(() => {
+      resetAll();
+      setDash(false);
+      setViewIdx(null);
+    }),
+    onHome: () => transitionTo(() => {
+      setDash(false);
+      setViewIdx(null);
+      setHome(true);
+    })
   }) : /*#__PURE__*/React.createElement(React.Fragment, null, step === 0 && /*#__PURE__*/React.createElement(Wizard, {
     quant,
     setQuant,
@@ -483,6 +545,7 @@ JSON만 출력(백틱 금지):
     isDemo,
     showToast,
     onNew: resetAll,
+    onSave: saveCase,
     onHome: () => transitionTo(() => {
       resetAll();
       setHome(true);
@@ -1443,7 +1506,11 @@ function CasePage({
   isDemo,
   showToast,
   onNew,
-  onHome
+  onSave,
+  onHome,
+  fromDash,
+  onBackDash,
+  celebrate
 }) {
   const sugCount = sections.reduce((n, s) => n + s.sentences.filter(x => x.status === "suggested").length, 0);
   const [confetti, setConfetti] = useState(false);
@@ -1452,13 +1519,15 @@ function CasePage({
   const lastDotRef = useRef(null);
   const [beam, setBeam] = useState(null);
   useEffect(() => {
+    if (celebrate === false) return;
     const a = setTimeout(() => setConfetti(true), 1000);
     const b = setTimeout(() => setConfetti(false), 5800);
     return () => {
       clearTimeout(a);
       clearTimeout(b);
     };
-  }, []);
+  }, []); // eslint-disable-line
+
   useLayoutEffect(() => {
     function measure() {
       if (!wrapRef.current || !firstDotRef.current || !lastDotRef.current) return;
@@ -1766,13 +1835,315 @@ function CasePage({
       justifyContent: "space-between",
       padding: "0 32px"
     }
+  }, fromDash ? /*#__PURE__*/React.createElement("button", {
+    onClick: onBackDash,
+    className: "bpGhost"
+  }, "← 대시보드로") : /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 10
+    }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: onNew,
     className: "bpGhost"
   }, "새 케이스"), /*#__PURE__*/React.createElement("button", {
+    onClick: onSave,
+    className: "bpGhost"
+  }, "저장")), /*#__PURE__*/React.createElement("button", {
     onClick: copyMarkdown,
     className: "bpBlack"
   }, "복사"))));
+}
+
+// ════════════════════════ 대시보드 ════════════════════════
+function Dashboard({
+  cases,
+  onView,
+  onDelete,
+  onCreate,
+  onHome
+}) {
+  const [menuId, setMenuId] = useState(null);
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      minHeight: "100vh",
+      background: "#fff"
+    },
+    onClick: () => setMenuId(null)
+  }, /*#__PURE__*/React.createElement(TopBar, {
+    onHome: onHome
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxWidth: 1060,
+      margin: "0 auto",
+      padding: "100px 40px 80px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "fadeUp",
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 30
+    }
+  }, /*#__PURE__*/React.createElement("h1", {
+    style: {
+      fontSize: 24,
+      fontWeight: 500,
+      letterSpacing: "-0.01em",
+      margin: 0
+    }
+  }, "대시보드"), /*#__PURE__*/React.createElement("button", {
+    onClick: onCreate,
+    className: "bpBlack"
+  }, "케이스 만들기")), cases.length === 0 ?
+  /*#__PURE__*/
+  /* 빈 상태 */
+  React.createElement("div", {
+    className: "fadeUp",
+    style: {
+      textAlign: "center",
+      padding: "140px 20px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 21,
+      fontWeight: 500,
+      letterSpacing: "-0.01em",
+      marginBottom: 10
+    }
+  }, "저장된 케이스가 없어요"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: 14,
+      fontWeight: 300,
+      color: "#666",
+      margin: "0 0 28px",
+      lineHeight: 1.6
+    }
+  }, "재료를 넣으면 5단 서사의 케이스 스터디 초안이 만들어져요."), /*#__PURE__*/React.createElement("button", {
+    onClick: onCreate,
+    className: "bpBlack"
+  }, "케이스 추가하기")) : /*#__PURE__*/React.createElement(React.Fragment, null, cases.map((c, i) => /*#__PURE__*/React.createElement("div", {
+    key: c.id,
+    className: "fadeUp",
+    style: {
+      position: "relative",
+      display: "flex",
+      border: "1px solid #e2e2e2",
+      borderRadius: 6,
+      background: "#fff",
+      marginBottom: 18,
+      animationDelay: `${i * 0.06 + 0.05}s`
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "thumbWrap",
+    onClick: e => {
+      e.stopPropagation();
+      onView(i);
+    },
+    style: {
+      position: "relative",
+      width: 340,
+      height: 214,
+      flexShrink: 0,
+      background: "#141416",
+      borderRight: "1px solid #eee",
+      overflow: "hidden",
+      cursor: "pointer",
+      borderRadius: "5px 0 0 5px"
+    }
+  }, c.images && c.images.length > 0 ? /*#__PURE__*/React.createElement("img", {
+    src: c.images[0].dataUrl,
+    alt: "",
+    style: {
+      width: "100%",
+      height: "100%",
+      objectFit: "cover",
+      objectPosition: "top"
+    }
+  }) : /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      inset: 0,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 24
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "#fff",
+      fontSize: 15,
+      fontWeight: 500,
+      textAlign: "center",
+      lineHeight: 1.5
+    }
+  }, c.proj.projectName)), /*#__PURE__*/React.createElement("div", {
+    className: "thumbDim"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "thumbBtn"
+  }, "자세히 보기"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      padding: "24px 28px",
+      position: "relative",
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 16.5,
+      fontWeight: 500,
+      letterSpacing: "-0.01em",
+      marginBottom: 8,
+      paddingRight: 40
+    }
+  }, c.proj.projectName), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13.5,
+      fontWeight: 300,
+      color: "#888",
+      marginBottom: 4
+    }
+  }, c.proj.productType), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 300,
+      color: "#555",
+      marginBottom: 18
+    }
+  }, c.baseline ? `${c.baseline.type} 프로젝트 · ${c.baseline.label}` : ""), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      flexWrap: "wrap"
+    }
+  }, (c.proj.keywords || []).map(k => /*#__PURE__*/React.createElement("span", {
+    key: k,
+    style: {
+      fontSize: 12,
+      fontWeight: 300,
+      color: "#555",
+      border: "1px solid #e2e2e2",
+      borderRadius: 4,
+      padding: "4px 11px"
+    }
+  }, k))), /*#__PURE__*/React.createElement("button", {
+    onClick: e => {
+      e.stopPropagation();
+      setMenuId(menuId === c.id ? null : c.id);
+    },
+    style: {
+      position: "absolute",
+      top: 18,
+      right: 16,
+      width: 32,
+      height: 32,
+      border: "none",
+      background: "none",
+      cursor: "pointer",
+      color: "#1a1a1a",
+      borderRadius: 6,
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center"
+    },
+    title: "더보기"
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "17",
+    height: "17",
+    viewBox: "0 0 24 24",
+    fill: "currentColor"
+  }, /*#__PURE__*/React.createElement("circle", {
+    cx: "5",
+    cy: "12",
+    r: "1.7"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "12",
+    cy: "12",
+    r: "1.7"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "19",
+    cy: "12",
+    r: "1.7"
+  }))), menuId === c.id && /*#__PURE__*/React.createElement("div", {
+    className: "popIn",
+    style: {
+      position: "absolute",
+      top: 52,
+      right: 16,
+      background: "#fff",
+      border: "1px solid #e2e2e2",
+      borderRadius: 6,
+      boxShadow: "0 12px 34px rgba(0,0,0,.12)",
+      zIndex: 5,
+      minWidth: 130,
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: e => {
+      e.stopPropagation();
+      setMenuId(null);
+      onDelete(c.id);
+    },
+    style: {
+      display: "block",
+      width: "100%",
+      textAlign: "left",
+      padding: "12px 16px",
+      border: "none",
+      background: "none",
+      fontSize: 13,
+      fontWeight: 400,
+      color: "#c0392b",
+      cursor: "pointer",
+      fontFamily: "inherit"
+    }
+  }, "삭제"))))), /*#__PURE__*/React.createElement("div", {
+    className: "fadeUp",
+    style: {
+      display: "flex",
+      justifyContent: "flex-end",
+      alignItems: "center",
+      gap: 20,
+      marginTop: 26,
+      animationDelay: ".2s"
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "14",
+    height: "14",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "#bbb",
+    strokeWidth: "2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M15 18l-6-6 6-6"
+  })), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13,
+      color: "#1a1a1a"
+    }
+  }, /*#__PURE__*/React.createElement("b", {
+    style: {
+      fontWeight: 600
+    }
+  }, "1~", cases.length), " ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontWeight: 300
+    }
+  }, cases.length, "개의 아이템 중")), /*#__PURE__*/React.createElement("svg", {
+    width: "14",
+    height: "14",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "#bbb",
+    strokeWidth: "2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M9 6l6 6-6 6"
+  }))))));
 }
 function Sentence({
   s,
@@ -1986,6 +2357,11 @@ body { margin: 0; background: #fff; }
 .heroCardOut { animation: kHeroOut .6s cubic-bezier(.25,0,.1,1) both; }
 @keyframes kDia { from { opacity: 0; filter: blur(12px); transform: translateY(14px); } to { opacity: 1; filter: blur(0); transform: translateY(0); } }
 .diaWord { display: inline-block; background: linear-gradient(180deg, #141414 30%, #7e7e7e 115%); -webkit-background-clip: text; background-clip: text; color: transparent; animation: kDia .85s cubic-bezier(.25,0,.1,1) both; will-change: filter, transform, opacity; }
+
+.thumbDim { position: absolute; inset: 0; background: rgba(0,0,0,.52); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .25s ease; }
+.thumbWrap:hover .thumbDim { opacity: 1; }
+.thumbBtn { height: 40px; padding: 0 20px; display: inline-flex; align-items: center; border: 1px solid #fff; border-radius: 5px; color: #fff; font-size: 13px; font-weight: 500; background: rgba(255,255,255,.06); transition: background .2s; }
+.thumbWrap:hover .thumbBtn:hover { background: rgba(255,255,255,.18); }
 
 .wipeCol { flex: 1; background: #141416; transform: scaleY(0); will-change: transform; }
 .wipeCover .wipeCol { transform-origin: top; animation: kWipeIn .5s cubic-bezier(.7,0,.2,1) both; }
